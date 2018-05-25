@@ -296,11 +296,69 @@ def evaluate():
     tl.vis.save_image(out_bicu, save_dir + '/valid_bicubic.png')
 
 
+def test(test_filename, frozen):
+    ## create folders to save result images
+    save_dir = "samples/{}".format(tl.global_flag['mode'])
+    tl.files.exists_or_mkdir(save_dir)
+    checkpoint_dir = "checkpoint"
+
+    ###====================== PRE-LOAD DATA ===========================###
+    test_lr_img_list = sorted(tl.files.load_file_list(path=config.TEST.lr_img_path, regx='.*.png', printable=False))
+    test_lr_imgs = tl.vis.read_images(test_lr_img_list, path=config.TEST.lr_img_path, n_threads=32)
+
+    ###========================== DEFINE MODEL ============================###
+    test_lr_img = test_lr_imgs[test_lr_img_list.index(test_filename)]
+    test_lr_img = (test_lr_img / 127.5) - 1  # rescale to ［－1, 1]
+
+    size = test_lr_img.shape
+    t_image = tf.placeholder('float32', [1, None, None, 3], name='input_image')
+
+    net_g = SRGAN_g(t_image, is_train=False, reuse=False)
+
+    ###========================== RESTORE G =============================###
+    sess = tf.Session(config=tf.ConfigProto(allow_soft_placement=True, log_device_placement=False))
+    tl.layers.initialize_global_variables(sess)
+    tl.files.load_and_assign_npz(sess=sess, name=checkpoint_dir + '/g_srgan.npz', network=net_g)
+
+    if frozen:
+        # Save graph
+        input_graph_def = tf.get_default_graph().as_graph_def()
+        
+        # Serialize and dump the output graph to the filesystem
+        with tf.gfile.GFile("checkpoint/SRGAN_tl_DIV2K_gen.graph.pb", 'wb') as f:
+            f.write(input_graph_def.SerializeToString())
+            
+        output_graph_def = tf.graph_util.convert_variables_to_constants(
+                    sess,  # The session is used to retrieve the weights
+                    input_graph_def,  # The graph_def is used to retrieve the nodes
+                    ["SRGAN_g/out/Tanh"]  # The output node names are used to select the useful nodes
+                )
+                
+        with tf.gfile.GFile("checkpoint/SRGAN_tl_DIV2K_gen.frozen.pb", 'wb') as f:
+            f.write(output_graph_def.SerializeToString())
+    ###======================= EVALUATION =============================###
+    start_time = time.time()
+    out = sess.run(net_g.outputs, {t_image: [test_lr_img]})
+    print("took: %4.4fs" % (time.time() - start_time))
+
+    print("LR size: %s /  generated HR size: %s" % (size, out.shape))  # LR size: (339, 510, 3) /  gen HR size: (1, 1356, 2040, 3)
+    print("[*] save images")
+    tl.vis.save_image(test_lr_img, save_dir + '/test_lr_img.png')
+    tl.vis.save_image(out[0], save_dir + '/test_gen.png')
+
+    out_bicu = scipy.misc.imresize(test_lr_img, [size[0] * 4, size[1] * 4], interp='bicubic', mode=None)
+    tl.vis.save_image(out_bicu, save_dir + '/test_bicubic.png')    
+    
+    
 if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--mode', type=str, default='srgan', help='srgan, evaluate')
+    parser.add_argument('--test_file', type=str, default='img_005_90x62.png',
+                        help='Filename of img in myImages directory')
+    parser.add_argument('--tf_frozen', action='store_true',
+                                 help='Save srgan_g as TF frozen graph')
 
     args = parser.parse_args()
 
@@ -310,5 +368,7 @@ if __name__ == '__main__':
         train()
     elif tl.global_flag['mode'] == 'evaluate':
         evaluate()
+    elif tl.global_flag['mode'] == 'test':
+        test(args.test_file, args.tf_frozen)
     else:
-        raise Exception("Unknow --mode")
+        raise Exception("Unknown --mode")
