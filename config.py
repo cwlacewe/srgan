@@ -28,6 +28,10 @@ config.VALID = edict()
 config.VALID.hr_img_path = 'data2017/DIV2K_valid_HR/'
 config.VALID.lr_img_path = 'data2017/DIV2K_valid_LR_bicubic/X4/'
 
+config.TEST = edict()
+## inference location
+config.TEST.lr_img_path = 'myImages/'
+
 def log_config(filename, cfg):
     with open(filename, 'w') as f:
         f.write("================================================\n")

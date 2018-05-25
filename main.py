@@ -343,11 +343,11 @@ def test(test_filename, frozen):
 
     print("LR size: %s /  generated HR size: %s" % (size, out.shape))  # LR size: (339, 510, 3) /  gen HR size: (1, 1356, 2040, 3)
     print("[*] save images")
-    tl.vis.save_image(test_lr_img, save_dir + '/test_lr_img.png')
-    tl.vis.save_image(out[0], save_dir + '/test_gen.png')
+    # tl.vis.save_image(test_lr_img, save_dir + '/test_lr_img.png')
+    tl.vis.save_image(out[0], save_dir + '/{}_gen.png'.format(test_filename.split('.png')[0]))
 
     out_bicu = scipy.misc.imresize(test_lr_img, [size[0] * 4, size[1] * 4], interp='bicubic', mode=None)
-    tl.vis.save_image(out_bicu, save_dir + '/test_bicubic.png')    
+    tl.vis.save_image(out_bicu, save_dir + '/{}_bicubic.png'.format(test_filename.split('.png')[0]))    
     
     
 if __name__ == '__main__':
