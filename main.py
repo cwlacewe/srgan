@@ -316,29 +316,34 @@ def test(test_filename, frozen):
     net_g = SRGAN_g(t_image, is_train=False, reuse=False)
 
     ###========================== RESTORE G =============================###
-    sess = tf.Session(config=tf.ConfigProto(allow_soft_placement=True, log_device_placement=False))
-    tl.layers.initialize_global_variables(sess)
-    tl.files.load_and_assign_npz(sess=sess, name=checkpoint_dir + '/g_srgan.npz', network=net_g)
+    # gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.5)
+    tfconfig = tf.ConfigProto(allow_soft_placement=True, log_device_placement=True)
+    tfconfig.gpu_options.allow_growth = True
+    # tfconfig.gpu_options.per_process_gpu_memory_fraction = 0.5
+    with tf.Session(config=tfconfig) as sess:
+    # sess = tf.Session(config=tf.ConfigProto(allow_soft_placement=True, log_device_placement=False))
+        tl.layers.initialize_global_variables(sess)
+        tl.files.load_and_assign_npz(sess=sess, name=checkpoint_dir + '/g_srgan.npz', network=net_g)
 
-    if frozen:
-        # Save graph
-        input_graph_def = tf.get_default_graph().as_graph_def()
-        
-        # Serialize and dump the output graph to the filesystem
-        with tf.gfile.GFile("checkpoint/SRGAN_tl_DIV2K_gen.graph.pb", 'wb') as f:
-            f.write(input_graph_def.SerializeToString())
+        if frozen:
+            # Save graph
+            input_graph_def = tf.get_default_graph().as_graph_def()
             
-        output_graph_def = tf.graph_util.convert_variables_to_constants(
-                    sess,  # The session is used to retrieve the weights
-                    input_graph_def,  # The graph_def is used to retrieve the nodes
-                    ["SRGAN_g/out/Tanh"]  # The output node names are used to select the useful nodes
-                )
+            # Serialize and dump the output graph to the filesystem
+            with tf.gfile.GFile("checkpoint/SRGAN_tl_DIV2K_gen.graph.pb", 'wb') as f:
+                f.write(input_graph_def.SerializeToString())
                 
-        with tf.gfile.GFile("checkpoint/SRGAN_tl_DIV2K_gen.frozen.pb", 'wb') as f:
-            f.write(output_graph_def.SerializeToString())
-    ###======================= EVALUATION =============================###
-    start_time = time.time()
-    out = sess.run(net_g.outputs, {t_image: [test_lr_img]})
+            output_graph_def = tf.graph_util.convert_variables_to_constants(
+                        sess,  # The session is used to retrieve the weights
+                        input_graph_def,  # The graph_def is used to retrieve the nodes
+                        ["SRGAN_g/out/Tanh"]  # The output node names are used to select the useful nodes
+                    )
+                    
+            with tf.gfile.GFile("checkpoint/SRGAN_tl_DIV2K_gen.frozen.pb", 'wb') as f:
+                f.write(output_graph_def.SerializeToString())
+        ###======================= EVALUATION =============================###
+        start_time = time.time()
+        out = sess.run(net_g.outputs, {t_image: [test_lr_img]})
     print("took: %4.4fs" % (time.time() - start_time))
 
     print("LR size: %s /  generated HR size: %s" % (size, out.shape))  # LR size: (339, 510, 3) /  gen HR size: (1, 1356, 2040, 3)
