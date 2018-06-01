@@ -1,11 +1,53 @@
 ## Super Resolution Examples
 
 
-We run this script under [TensorFlow](https://www.tensorflow.org) 1.4 and the [TensorLayer](https://github.com/tensorlayer/tensorlayer) 1.8.0+.
+We run this script under [TensorFlow](https://www.tensorflow.org) 1.7.0-gpu-py3 and the [TensorLayer](https://github.com/tensorlayer/tensorlayer) 1.8.0+.
+A docker is available in the docker directory.  The Dockerfile assumes the use of environmental variables $DOCKER_PROXY_RUN_ARGS and $DOCKER_PROXY_BUILD_ARGS defined as:
+```
+ENV DOCKER_PROXY_RUN_ARGS="\
+    --env HTTPS_PROXY=$HTTPS_PROXY \
+    --env https_proxy=$https_proxy \
+    --env HTTP_PROXY=$HTTP_PROXY \
+    --env http_proxy=$http_proxy \
+    --env NO_PROXY=$NO_PROXY \
+    --env no_proxy=$no_proxy \
+    --dns <dns ip>"
 
-<!---
-⚠️ This repo will be merged into [tensorlayer](https://github.com/zsdonghao/tensorlayer) soon.
--->
+ENV DOCKER_PROXY_BUILD_ARGS="\
+    --build-arg HTTPS_PROXY=$HTTPS_PROXY \
+    --build-arg https_proxy=$https_proxy \
+    --build-arg HTTP_PROXY=$HTTP_PROXY \
+    --build-arg http_proxy=$http_proxy \
+    --build-arg NO_PROXY=$NO_PROXY \
+    --build-arg no_proxy=$no_proxy"
+```
+
+This minimizes the command to:
+```
+
+sudo nvidia-docker build $DOCKER_PROXY_BUILD_ARGS -t srgan:gpu -f Dockerfile_gpu .
+
+```
+or use:
+```
+./build_docker.sh
+```
+
+
+# Run
+Use the following to run the docker:
+```
+./run_docker.sh
+```
+
+### Docker example run
+The docker allows access to your $HOME directory to allow saving to your system.  Please keep this in mind but you can change the binding in run_docker.sh.
+
+The following example upscales myImages/test_SRGAN_img_108x192.png from /path/to/this/repo.  The myImages directory is used for the test method.  You can also use resize_save_test_img.py to resize images for test cases.
+ 
+```
+python3 main.py --mode=test --test_file=test_SRGAN_img_108x192.png
+```
 
 ### SRGAN Architecture
 

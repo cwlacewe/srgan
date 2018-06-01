@@ -1,0 +1,20 @@
+# DOCKERFILE FOR SRGAN
+
+FROM tensorflow/tensorflow:1.7.0-gpu-py3
+
+ENV SHELL=/bin/bash
+ARG DEFAULT_WORKDIR=/workspace
+
+RUN apt-get update && apt-get install -y \      
+        bsdmainutils \  
+        git \
+        graphviz \
+        less \
+        nano \
+        vim \
+        wget && \        
+    rm -rf /var/lib/apt/lists/*
+    
+RUN pip3 install tensorlayer==1.8.0 easydict
+
+WORKDIR /home
