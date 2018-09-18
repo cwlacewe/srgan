@@ -30,18 +30,18 @@ sudo nvidia-docker build $DOCKER_PROXY_BUILD_ARGS -t srgan:gpu -f Dockerfile_gpu
 ```
 or use:
 ```
-./build_docker.sh
+./build_docker_gpu.sh
 ```
 
 
 # Run
 Use the following to run the docker:
 ```
-./run_docker.sh
+./run_docker_gpu.sh
 ```
 
 ### Docker example run
-The docker allows access to your $HOME directory to allow saving to your system.  Please keep this in mind but you can change the binding in run_docker.sh.
+The docker allows access to your $HOME directory to allow saving to your system.  Please keep this in mind but you can change the binding in run_docker_gpu.sh.
 
 The following example upscales myImages/test_SRGAN_img_108x192.png from /path/to/this/repo.  The myImages directory is used for the test method.  You can also use resize_save_test_img.py to resize images for test cases.
  
@@ -102,6 +102,12 @@ python main.py
 
 ```bash
 python main.py --mode=evaluate 
+```
+
+- Test a single image.
+
+```bash
+python main.py --mode=test --test_file=test_SRGAN_img_540x960.png
 ```
 
 
